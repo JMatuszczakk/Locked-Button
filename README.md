@@ -2,6 +2,7 @@
 
 A custom card for Home Assistant with a numeric keypad for secure code entry.
 
+![screenshot of the locked button](https://github.com/JMatuszczakk/Locked-Button/blob/main/image.png?raw=true)
 ## Features
 
 - Password-protected actions in your Home Assistant dashboard
