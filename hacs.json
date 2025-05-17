@@ -1,0 +1,7 @@
+{
+  "name": "Lock Numpad Card",
+  "content_in_root": false,
+  "filename": "locked-button.js",
+  "render_readme": true,
+  "homeassistant": "2022.12.0"
+}
