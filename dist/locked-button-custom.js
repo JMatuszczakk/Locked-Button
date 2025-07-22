@@ -1,188 +1,242 @@
-class LockedButton extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: "open" });
-    this._code = "";
-    this._dialogOpen = false;
-    this._shuffledDigits = [];  // Neue Property für gemischte Zahlen
-  }
+import {
+    LitElement,
+    html,
+    css,
+} from "https://unpkg.com/lit-element@2.0.1/lit-element.js?module";
 
-  set hass(hass) {
-    this._hass = hass;
-    this.render();
-  }
-
-  setConfig(config) {
-    if (!config.code) {
-      throw new Error("Code is required");
-    }
-    this.config = config;
-  }
-
-  getCardSize() {
-    return 1;
-  }
-
-  _shuffleDigits() {
-    const digits = [...Array(10).keys()];
-    for (let i = digits.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [digits[i], digits[j]] = [digits[j], digits[i]];
-    }
-    return digits;
-  }
-
-  _handleInput(num) {
-    if (this._code.length < this.config.code.length) {
-      this._code += num;
-      this.render();
+class LockNumpadCardCustom extends LitElement {
+    static get properties() {
+        return {
+            hass: { type: Object },
+            config: { type: Object },
+            _code: { type: String, state: true },
+            _dialogOpen: { type: Boolean, state: true },
+            _success: { type: Boolean, state: true },
+        };
     }
 
-    if (this._code === this.config.code) {
-      this._hass.callService(
-        this.config.action.service.split(".")[0],
-        this.config.action.service.split(".")[1],
-        this.config.action.data
-      );
-      this._code = "";
-      this._dialogOpen = false;
-      alert(this.config.success_message || "Code accepted");
+    constructor() {
+        super();
+        this._code = "";
+        this._dialogOpen = false;
+        this._success = false;
+        this._shuffledDigits = [];  // Neue Property für gemischte Zahlen
     }
-  }
 
-  _clearCode() {
-    this._code = "";
-    this.render();
-  }
+    static getStubConfig() {
+        return {
+            code: "1234",
+            button_label: "Enter Code",
+            success_message: "Code Accepted ✓",
+            action: {
+                service: "light.turn_on"
+            }
+        };
+    }
 
-  render() {
-    if (!this.shadowRoot || !this.config || !this._hass) return;
+    setConfig(config) {
+        if (!config.code) {
+            throw new Error("Please define a code");
+        }
+        if (!config.action || !config.action.service) {
+            throw new Error("Please define an action service");
+        }
+        if (typeof config.code !== "string") {
+            throw new Error("Code must be a string");
+        }
+        if (config.action.service.split(".").length !== 2) {
+            throw new Error("Service should be in format: domain.service");
+        }
 
-    const style = `
-      <style>
-        .button-container {
-          text-align: center;
+        // Set default configuration values
+        this.config = {
+            button_label: "Enter Code",
+            success_message: "Code Accepted ✓",
+            ...config
+        };
+    }
+
+    // Handle button press
+    _handlePress(num) {
+        this._code += num;
+
+        // Check if code matches when it reaches the same length
+        if (this._code.length === this.config.code.length) {
+            if (this._code === this.config.code) {
+                // Execute configured action
+                const [domain, service] = this.config.action.service.split(".");
+                this.hass.callService(domain, service, this.config.action.data || {});
+                // Show success message and close dialog after a delay
+                this._success = true;
+                setTimeout(() => {
+                    this._success = false;
+                    this._dialogOpen = false;
+                }, 1500);
+            }
+            // Reset code regardless of match
+            this._code = "";
+        }
+    }
+
+    // Generate dots for code display
+    _generateDots() {
+        const totalDots = this.config.code.length;
+        const filledDots = this._code.length;
+
+        return html`
+        <div class="dots">
+          ${[...Array(totalDots)].map((_, i) =>
+            html`<div class="dot ${i < filledDots ? 'filled' : ''}"></div>`
+        )}
+        </div>
+      `;
+    }
+
+    // Neue Methode zum Mischen der Zahlen 0-9
+    _shuffleDigits() {
+        const digits = [0,1,2,3,4,5,6,7,8,9];
+        for (let i = digits.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [digits[i], digits[j]] = [digits[j], digits[i]];
+        }
+        return digits;
+    }
+
+    render() {
+        if (!this.config) return html``;
+
+        return html`
+        <ha-card>
+          <button class="action-button" @click=${() => {
+            this._shuffledDigits = this._shuffleDigits();
+            this._dialogOpen = true;
+          }}>
+            ${this.config.button_label || "Enter Code"}
+          </button>
+  
+          ${this._dialogOpen ? html`
+            <ha-dialog
+              open
+              @closed=${() => this._dialogOpen = false}
+              hideActions
+            >
+              <div slot="heading">
+                Enter Code
+                ${this._generateDots()}
+              </div>
+              <div class="content">
+                ${this._success ? html`
+                  <div class="success-message">
+                    ${this.config.success_message}
+                  </div>
+                ` : html`
+                  <div class="pad">
+                  ${this._shuffledDigits.map(num => html`
+                    <button @click=${() => this._handlePress(num)}>${num}</button>
+                  `)}
+                  </div>
+                `}
+              </div>
+            </ha-dialog>
+          ` : ''}
+        </ha-card>
+      `;
+    }
+
+    static get styles() {
+        return css`
+        :host {
+          --button-size: 60px;
         }
         .action-button {
-          padding: 10px 16px;
-          font-size: 1.2em;
-          background-color: var(--primary-color, #03a9f4);
-          color: white;
+          width: 100%;
+          padding: 16px;
+          background: var(--primary-color);
           border: none;
-          border-radius: 8px;
+          border-radius: var(--ha-card-border-radius, 4px);
+          color: var(--text-primary-color);
+          font-size: 1.2em;
           cursor: pointer;
+          transition: background-color 0.2s ease-in-out;
         }
-        .keypad {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 10px;
-          padding: 20px;
+        .action-button:hover {
+          background: var(--primary-color);
+          filter: brightness(120%);
         }
-        .key {
-          padding: 20px;
-          background: #eee;
-          font-size: 1.5em;
-          text-align: center;
-          border-radius: 6px;
-          cursor: pointer;
+        ha-dialog {
+          --mdc-dialog-min-width: 300px;
+          --mdc-dialog-max-width: 350px;
+          --justify-action-buttons: space-between;
         }
-        .code-display {
-          font-size: 1.4em;
-          margin-bottom: 10px;
-          letter-spacing: 8px;
+        .content {
+          padding: 0 16px 16px;
         }
-        .overlay {
-          position: fixed;
-          top: 0; left: 0; right: 0; bottom: 0;
-          background: rgba(0,0,0,0.6);
+        .dots {
           display: flex;
           justify-content: center;
-          align-items: center;
+          margin: 8px 0 16px;
+          gap: 8px;
         }
-        .dialog {
-          background: white;
-          padding: 20px;
-          border-radius: 10px;
+        .dot {
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          background: var(--disabled-text-color);
+        }
+        .dot.filled {
+          background: var(--primary-color);
+        }
+        .pad {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 8px;
           max-width: 300px;
-          width: 90%;
+          margin: 0 auto;
         }
-      </style>
-    `;
-
-    const html = `
-      ${style}
-      <div class="button-container">
-        <button class="action-button" id="open-dialog">
-          ${this.config.button_label || "Code eingeben"}
-        </button>
-      </div>
-      ${this._dialogOpen ? `
-        <div class="overlay" id="overlay">
-          <div class="dialog">
-            <div class="code-display">${"*".repeat(this._code.length)}</div>
-            <div class="keypad">
-              ${this._shuffledDigits.map(num => `
-                <div class="key" data-num="${num}">${num}</div>
-              `).join('')}
-              <div class="key" id="clear">⟲</div>
-              <div class="key" data-num="0">0</div>
-              <div class="key" id="close">✕</div>
-            </div>
-          </div>
-        </div>
-      ` : ""}
-    `;
-
-    this.shadowRoot.innerHTML = html;
-
-    // Event Handler
-    const openBtn = this.shadowRoot.getElementById("open-dialog");
-    if (openBtn) {
-      openBtn.addEventListener("click", () => {
-        this._shuffledDigits = this._shuffleDigits();  // Nur hier mischen
-        this._dialogOpen = true;
-        this._code = "";
-        this.render();
-      });
-    }
-
-    const overlay = this.shadowRoot.getElementById("overlay");
-    if (overlay) {
-      overlay.addEventListener("click", (e) => {
-        if (e.target === overlay) {
-          this._dialogOpen = false;
-          this._code = "";
-          this.render();
+        .pad button {
+          width: var(--button-size);
+          height: var(--button-size);
+          border-radius: 50%;
+          border: none;
+          background: var(--primary-color);
+          color: var(--text-primary-color);
+          font-size: 1.5em;
+          cursor: pointer;
+          transition: all 0.2s ease-in-out;
         }
-      });
+        .pad button:hover {
+          background: var(--primary-color);
+          filter: brightness(120%);
+        }
+        .pad button:active {
+          transform: scale(0.95);
+        }
+        /* Special positioning for '0' button */
+        .pad button:last-child {
+          grid-column: 2;
+        }
+        .success-message {
+          color: var(--success-color, #4CAF50);
+          text-align: center;
+          font-size: 1.5em;
+          font-weight: bold;
+          padding: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 200px;
+        }
+      `;
     }
-
-    const keys = this.shadowRoot.querySelectorAll(".key");
-    keys.forEach(key => {
-      const num = key.dataset.num;
-      if (num !== undefined) {
-        key.addEventListener("click", () => this._handleInput(num));
-      }
-    });
-
-    const clearBtn = this.shadowRoot.getElementById("clear");
-    if (clearBtn) {
-      clearBtn.addEventListener("click", () => this._clearCode());
-    }
-
-    const closeBtn = this.shadowRoot.getElementById("close");
-    if (closeBtn) {
-      closeBtn.addEventListener("click", () => {
-        this._dialogOpen = false;
-        this._code = "";
-        this.render();
-      });
-    }
-  }
-
-  connectedCallback() {
-    this.render();
-  }
 }
 
-customElements.define("lock-numpad-card-custom", LockedButton);
+customElements.define("lock-numpad-card-custom", LockNumpadCardCustom);
+
+window.customCards = window.customCards || [];
+window.customCards.push({
+    type: "lock-numpad-card-custom",
+    name: "Lock Numpad Card Custom",
+    description: "A card with numeric keypad for code entry",
+    preview: true,
+    configurable: true
+});
