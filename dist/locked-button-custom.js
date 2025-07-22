@@ -164,8 +164,8 @@ class LockNumpadCardCustom extends LitElement {
           filter: brightness(120%);
         }
         ha-dialog {
-          --mdc-dialog-min-width: 300px;
-          --mdc-dialog-max-width: 350px;
+          --mdc-dialog-min-width: 600px;
+          --mdc-dialog-max-width: 650px;
           --justify-action-buttons: space-between;
         }
         .content {
@@ -190,7 +190,7 @@ class LockNumpadCardCustom extends LitElement {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
           gap: 8px;
-          max-width: 300px;
+          max-width: 500px;
           margin: 0 auto;
         }
         .pad button {
@@ -205,7 +205,7 @@ class LockNumpadCardCustom extends LitElement {
           transition: all 0.2s ease-in-out;
         }
         .pad button:hover {
-          background: #CE5C5C;
+          background: #e68181;
           filter: brightness(100%);
         }
         .pad button:active {
