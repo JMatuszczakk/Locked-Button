@@ -205,7 +205,7 @@ class LockNumpadCardCustom extends LitElement {
           transition: all 0.2s ease-in-out;
         }
         .pad button:hover {
-          background: var(--primary-color);
+          background: #B22222;
           filter: brightness(120%);
         }
         .pad button:active {
