@@ -178,8 +178,8 @@ class LockNumpadCardCustom extends LitElement {
           gap: 8px;
         }
         .dot {
-          width: 12px;
-          height: 12px;
+          width: 30px;
+          height: 30px;
           border-radius: 50%;
           background: var(--disabled-text-color);
         }
@@ -205,11 +205,12 @@ class LockNumpadCardCustom extends LitElement {
           transition: all 0.2s ease-in-out;
         }
         .pad button:hover {
-          background: #B22222;
-          filter: brightness(120%);
+          background: #CE5C5C;
+          filter: brightness(100%);
         }
         .pad button:active {
           transform: scale(0.95);
+          background: #B22222;
         }
         /* Special positioning for '0' button */
         .pad button:last-child {
