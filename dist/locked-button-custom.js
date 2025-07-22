@@ -146,7 +146,7 @@ class LockNumpadCardCustom extends LitElement {
     static get styles() {
         return css`
         :host {
-          --button-size: 60px;
+          --button-size: 100px;
         }
         .action-button {
           width: 100%;
