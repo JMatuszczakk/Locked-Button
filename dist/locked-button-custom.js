@@ -4,7 +4,7 @@ import {
     css,
 } from "https://unpkg.com/lit-element@2.0.1/lit-element.js?module";
 
-class LockNumpadCard extends LitElement {
+class LockNumpadCardCustom extends LitElement {
     static get properties() {
         return {
             hass: { type: Object },
@@ -91,6 +91,16 @@ class LockNumpadCard extends LitElement {
       `;
     }
 
+    // Neue Methode zum Mischen der Zahlen 0-9
+    _shuffleDigits() {
+        const digits = [0,1,2,3,4,5,6,7,8,9];
+        for (let i = digits.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [digits[i], digits[j]] = [digits[j], digits[i]];
+        }
+        return digits;
+    }
+
     render() {
         if (!this.config) return html``;
 
@@ -117,7 +127,7 @@ class LockNumpadCard extends LitElement {
                   </div>
                 ` : html`
                   <div class="pad">
-                  ${[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map(num => html`
+                  ${this._shuffleDigits().map(num => html`
                     <button @click=${() => this._handlePress(num)}>${num}</button>
                   `)}
                   </div>
@@ -216,12 +226,12 @@ class LockNumpadCard extends LitElement {
     }
 }
 
-customElements.define("lock-numpad-card", LockNumpadCard);
+customElements.define("lock-numpad-card-custom", LockNumpadCardCustom);
 
 window.customCards = window.customCards || [];
 window.customCards.push({
-    type: "lock-numpad-card",
-    name: "Lock Numpad Card",
+    type: "lock-numpad-card-custom",
+    name: "Lock Numpad Card Custom",
     description: "A card with numeric keypad for code entry",
     preview: true,
     configurable: true
