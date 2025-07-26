@@ -10,6 +10,7 @@ A custom card for Home Assistant with a numeric keypad for secure code entry.
 - Visual feedback with dot indicators
 - Customizable success message and button label
 - Execute any Home Assistant service upon successful code entry
+- All numbers are randomized on every visit
 
 ## Installation
 
