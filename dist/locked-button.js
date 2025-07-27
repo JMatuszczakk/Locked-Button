@@ -56,8 +56,34 @@ class LockNumpadCard extends LitElement {
     }
 
     // Handle button press
-    _handlePress(num) {
-        this._code += num;
+    _handlePress(input) {
+        // Handle special buttons
+        if (input === 'X') {
+            // Close the modal
+            this._code = "";
+            this._dialogOpen = false;
+            return;
+        }
+        if (input === '✓') {
+            // Submit current code (like enter)
+            if (this._code === this.config.code) {
+                // Execute configured action
+                const [domain, service] = this.config.action.service.split(".");
+                this.hass.callService(domain, service, this.config.action.data || {});
+                // Show success message and close dialog after a delay
+                this._success = true;
+                setTimeout(() => {
+                    this._success = false;
+                    this._dialogOpen = false;
+                }, 1500);
+            }
+            // Reset code regardless of match
+            this._code = "";
+            return;
+        }
+
+        // Handle numeric input
+        this._code += input;
 
         // Check if code matches when it reaches the same length
         if (this._code.length === this.config.code.length) {
@@ -117,9 +143,12 @@ class LockNumpadCard extends LitElement {
                   </div>
                 ` : html`
                   <div class="pad">
-                  ${[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map(num => html`
+                  ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => html`
                     <button @click=${() => this._handlePress(num)}>${num}</button>
                   `)}
+                    <button class="special-button close-button" @click=${() => this._handlePress('X')}>✕</button>
+                    <button @click=${() => this._handlePress('0')}>0</button>
+                    <button class="special-button confirm-button" @click=${() => this._handlePress('✓')}>✓</button>
                   </div>
                 `}
               </div>
@@ -197,9 +226,17 @@ class LockNumpadCard extends LitElement {
         .pad button:active {
           transform: scale(0.95);
         }
-        /* Special positioning for '0' button */
-        .pad button:last-child {
-          grid-column: 2;
+        .special-button {
+          background: var(--secondary-color, var(--primary-color)) !important;
+          font-weight: bold;
+        }
+        .close-button {
+          background: var(--error-color, #f44336) !important;
+          color: white !important;
+        }
+        .confirm-button {
+          background: var(--success-color, #4CAF50) !important;
+          color: white !important;
         }
         .success-message {
           color: var(--success-color, #4CAF50);

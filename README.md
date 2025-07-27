@@ -6,8 +6,11 @@ A custom card for Home Assistant with a numeric keypad for secure code entry.
 ## Features
 
 - Password-protected actions in your Home Assistant dashboard
-- Configurable numeric keypad interface
+- Alarm system style numeric keypad with special action buttons
 - Visual feedback with dot indicators
+- X button closes the modal without action
+- ✓ button submits the current code for validation
+- Automatic submission when code reaches expected length
 - Customizable success message and button label
 - Execute any Home Assistant service upon successful code entry
 
@@ -53,6 +56,23 @@ action:
   data:
     entity_id: light.living_room
 ```
+
+### Keypad Layout
+
+The keypad follows a clean alarm system layout:
+
+```
+1 2 3
+4 5 6
+7 8 9
+✕ 0 ✓
+```
+
+- **Numeric buttons (0-9)**: Enter digits for your code
+- **✕ button (red)**: Close the modal/cancel operation
+- **✓ button (green)**: Submit the current code for validation
+
+The code is automatically submitted when you enter the full expected length, or you can manually submit using the ✓ button.
 
 ### Configuration Options
 
